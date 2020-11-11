@@ -54,36 +54,43 @@ int main(int argc, char const *argv[]){
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    int i = 1;
-    char filename[100];
-    recv(new_socket, filename, 100, 0);
-    int fd = open(filename, O_RDONLY, 00400);
-    if( fd < 0 ){
-        send(new_socket, "No such file exists. Please try again!\n", 40, 0);
-    }
-    else
-        send(new_socket, "Ok. Initiating file transfer.\n", 31, 0);
-    printf("waiting to recieve\n");
-
-    fstat(fd, &file);
-    printf("starting to send\n");
-    int size = 0, cur;
+    char chra[100];
+    recv(new_socket, chra, 100, 0);
+    printf("%s\n", chra);
     while(1){
-        cur = read(fd,  buffer, buf_size);
-        size += cur;
-        if( send(new_socket, buffer, cur, 0) < 0 ){
-            perror("sharing failure:");
-            exit(1);
+        int i = 1;
+        char filename[100];
+        recv(new_socket, filename, 100, 0);
+        int fd = open(filename, O_RDONLY, 00400);
+        if( fd < 0 ){
+            printf("fd = %d and filename was %s", fd, filename);
+            send(new_socket, "No such file exists. Please try again!\n", 40, 0);
+            continue;
         }
-        if( size >= file.st_size){
-            sleep(2);
-            send(new_socket, "Palash", 7, 0);
-            break;
-        }
-        i++;
-        bzero(buffer, buf_size);
-    }
+        else
+            send(new_socket, "Ok. Initiating file transfer.\n", 31, 0);
 
+        fstat(fd, &file);
+        int size = 0, cur;
+        while(1){
+            cur = read(fd,  buffer, buf_size);
+            size += cur;
+            if( send(new_socket, buffer, cur, 0) < 0 ){
+                perror("sharing failure:");
+                exit(1);
+            }
+            if( size >= file.st_size){
+                sleep(2);
+                send(new_socket, "Palash", 7, 0);
+                printf("\nSent the said file to the client completely!\n");
+                break;
+            }
+            printf("\rDownloading..... %f %%", ((float)100 * (float)size) / (float)file.st_size);
+            // printf("\r File sending ")
+            // printf("%d %d\n", size, file.st_size);
+            bzero(buffer, buf_size);
+        }
+    }
 
     send(new_socket , hello , strlen(hello) , 0 );  // use sendto() and recvfrom() for DGRAM
     return 0;

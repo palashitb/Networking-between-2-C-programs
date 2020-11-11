@@ -15,6 +15,7 @@
 void exhit(int socket){
     printf("Client closing down\n");
     close(socket);
+    exit(1);
 }
 
 int main(int argc, char const *argv[])
@@ -49,31 +50,54 @@ int main(int argc, char const *argv[])
         printf("\nConnection Failed \n");
         return -1;
     }
-    send(sock, "temp.txt", 9, 0);
-    char response[100];
-    recv(sock, response, 100, 0);
-    if( response[0] == 'O' && response[1] == 'k' ){
-        printf("%s\n", response);
-    }
-    else{
-        printf("%s\n", response);
-        exhit(sock); 
-    }   
-    int fd = open("out.txt", O_RDWR | O_CREAT, 00400 | 00200);
-    int i = 1;
-    int size = 0;
-    int n = 0;
-    while(1){  // read infromation received into the buffer
-        n = recv(sock , buffer, buf_size, 0);
-        if( n < buf_size && strcmp(buffer, "Palash") == 0 ){
-            break;
+    
+    send(sock, "Connected to cliend successfully!\n", 35, 0);
+    printf("Connected to server successfully!\n");
+    while(1){
+
+        char inp[1000];
+        char files[100];
+        scanf("%s", inp);
+        char *in = strtok(inp, " \t");
+        int ctr = 0;
+        int ctrl = 1;
+        while(in != NULL){
+            strcpy(files, in);
+            // printf("%s ctr is %d haha\n", files, ctrl);
+            ctrl++;
+            in = strtok(NULL, " \t");
+            if( strcmp(files, "exit") == 0 )
+                exhit(sock);
+            else if( strcmp(files, "get") == 0 )
+                continue;
+        
+            send(sock, files, 100, 0);
+            char response[100];
+            recv(sock, response, 100, 0);
+            if( response[0] == 'O' && response[1] == 'k' )
+                printf("%s\n", response);
+            else{
+                printf("%s\n", response);
+                continue; 
+            }   
+            int fd = open("out.txt", O_RDWR | O_CREAT, 00400 | 00200);
+            int i = 1;
+            int size = 0;
+            int n = 0;
+            while(1){  // read infromation received into the buffer
+                n = recv(sock , buffer, buf_size, 0);
+                if( n < buf_size && strcmp(buffer, "Palash") == 0 ){
+                    printf("File has been recieved completely!\n");
+                    break;
+                }
+                size += n;
+                write(fd, buffer, n);
+                bzero(buffer, buf_size);
+                i++;
+            }
+            bzero(buffer, buf_size);
         }
-        size += n;
-        write(fd, buffer, n);
-        bzero(buffer, buf_size);
-        i++;
     }
-    bzero(buffer, buf_size);
     valread = recv(sock, buffer, buf_size, 0);  // receive message back from server, into the buffer
     printf("%s\n",buffer);
     return 0;
