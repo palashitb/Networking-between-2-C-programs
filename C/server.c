@@ -14,6 +14,7 @@ int main(int argc, char const *argv[]){
     struct sockaddr_in address;  
     int buf_size = 4000;
     int opt = 1;
+    struct stat file;
     int addrlen = sizeof(address);
     char *hello = "Hello from server";
     char buffer[4000] = {0};
@@ -53,24 +54,37 @@ int main(int argc, char const *argv[]){
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    int i = 1, size = 0;
-    int fd = open("out1.txt", O_CREAT | O_RDWR, 00400 | 00200);
+    int i = 1;
+    char filename[100];
+    recv(new_socket, filename, 100, 0);
+    int fd = open(filename, O_RDONLY, 00400);
+    if( fd < 0 ){
+        send(new_socket, "No such file exists. Please try again!\n", 40, 0);
+    }
+    else
+        send(new_socket, "Ok. Initiating file transfer.\n", 31, 0);
     printf("waiting to recieve\n");
-    int n = 0;
-    while(1){  // read infromation received into the buffer
-        n = recv(new_socket , buffer, buf_size, 0);
-        if( n < buf_size && strcmp(buffer, "Palash") == 0 ){
-            printf("helo hola\n");
+
+    fstat(fd, &file);
+    printf("starting to send\n");
+    int size = 0, cur;
+    while(1){
+        cur = read(fd,  buffer, buf_size);
+        size += cur;
+        if( send(new_socket, buffer, cur, 0) < 0 ){
+            perror("sharing failure:");
+            exit(1);
+        }
+        if( size >= file.st_size){
+            sleep(2);
+            send(new_socket, "Palash", 7, 0);
             break;
         }
-        size += n;
-        printf("%d %d\n", size, n);
-        write(fd, buffer, n);
-        // if( buf_size > strlen(buffer))
-        //     break;
-        bzero(buffer, buf_size);
         i++;
+        bzero(buffer, buf_size);
     }
+
+
     send(new_socket , hello , strlen(hello) , 0 );  // use sendto() and recvfrom() for DGRAM
     return 0;
 }
