@@ -1,18 +1,26 @@
 // Client side C/C++ program to demonstrate Socket programming
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <netinet/in.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/stat.h>
 #include <string.h>
 #define PORT 8000
 
 int main(int argc, char const *argv[])
 {
+    struct stat file;
     struct sockaddr_in address;
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
-    char buffer[1024] = {0};
+    int buf_size = 4000;
+    char buffer[4000] = {0};
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Socket creation error \n");
@@ -38,9 +46,29 @@ int main(int argc, char const *argv[])
         printf("\nConnection Failed \n");
         return -1;
     }
-    send(sock , hello , strlen(hello) , 0 );  // send the message.
-    printf("Hello message sent\n");
-    valread = read( sock , buffer, 1024);  // receive message back from server, into the buffer
+
+    int fd = open("temp.txt", O_RDONLY, 00400);
+    int i = 1;
+    fstat(fd, &file);
+    printf("starting to send\n");
+    int size = 0, cur;
+    while(1){
+        cur = read(fd,  buffer, buf_size);
+        size += cur;
+        if( send(sock, buffer, cur, 0) < 0 ){
+            perror("sharing failure:");
+            exit(1);
+        }
+        if( size >= file.st_size){
+            sleep(2);
+            send(sock, "Palash", 7, 0);
+            break;
+        }
+        i++;
+        bzero(buffer, buf_size);
+    }
+    bzero(buffer, buf_size);
+    valread = recv( sock , buffer, buf_size, 0);  // receive message back from server, into the buffer
     printf("%s\n",buffer);
     return 0;
 }
