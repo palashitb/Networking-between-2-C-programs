@@ -3,12 +3,12 @@ Networking assignment that I have to complete in the next 3 days
 
 # How to run:
 - First run the server with:
-  1. gcc server.c
-  2. ./a.out
+  gcc server.c
+  ./a.out
   
 - Next, run the client with
-  1. gcc client.c
-  2. ./a.out
+  gcc client.c
+  ./a.out
  
 ## What is the whole point?
 
